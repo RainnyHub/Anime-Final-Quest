@@ -1,0 +1,146 @@
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+local Window = WindUI:CreateWindow({
+    Title = "Anime Final Quest",
+    Icon = "rbxassetid://76136547046287",
+    Author = "Rainny Hub",
+    Folder = "RainnyHub",
+    Size = UDim2.fromOffset(580, 460),
+    Transparent = true,
+    Theme = "Dark",
+    KeySystem = { 
+        Key = { "Key!!!", "Key13579" },
+        Note = "Key System with Rainny Hub",
+        SaveKey = false,
+    }
+})
+
+Window:Tag({
+    Title = "Update : 28/12/25",
+    Icon = "pc-case",
+    Color = Color3.fromHex("#30ff6a"),
+    Radius = 13, -- from 0 to 13
+})
+
+User = {
+        Enabled = true,
+        Anonymous = false,
+        Callback = function()
+            print("clicked")
+        end,
+    },
+
+Window:EditOpenButton({
+    Title = "Rainny Hub",
+    Icon = "candy-cane",
+    Enabled = true,
+    Draggable = true,
+})
+
+-- ประกาศ Tab ทั้งหมด (แก้ชื่อตัวแปรที่เว้นวรรคแล้ว)
+local MainTab = Window:Tab({ Title = "Main", Icon = "house" })
+local TeleportTab = Window:Tab({ Title = "Teleport", Icon = "shell" })
+
+Window:EditOpenButton({
+
+    Title = "Rainny Hub",
+
+    Icon = "candy-cane",
+
+    CornerRadius = UDim.new(0,16),
+
+    StrokeThickness = 2,
+
+    Color = ColorSequence.new(
+
+        Color3.fromHex("0055FF"), -- สีน้ำเงินเข้ม
+
+        Color3.fromHex("C0392B")  -- สีแดงเข้ม (จาก Code เดิมที่คุณชอบ)
+
+    ),
+
+    OnlyMobile = false,
+
+    Enabled = true,
+
+    Draggable = true,
+
+})
+
+local Toggle = MainTab:Toggle({
+    Title = "Auto Farm",
+    Desc = "Anti-Ban",
+    Icon = "",
+    Type = "Toggle",
+    Value = false, -- default value
+    Callback = function(state)
+        _G.AutoFarm = state
+
+        if _G.AutoFarm then
+            task.spawn(function()
+                local remote = game:GetService("ReplicatedStorage"):WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+                
+                while _G.AutoFarm do
+                    task.wait(0.5)
+                    pcall(function()
+                        for i, v in pairs(workspace.NPCs:GetChildren()) do
+                            if not _G.AutoFarm then break end
+                            
+                            local hum = v:FindFirstChild("Humanoid")
+                            local root = v:FindFirstChild("HumanoidRootPart")
+
+                            if hum and hum.Health > 0 and root then
+                                while _G.AutoFarm and hum.Health > 0 and v.Parent ~= nil do
+                                    task.wait() -- ป้องกันเกมค้าง
+                                    
+                                    local myRoot = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                                    if myRoot then
+                                        -- ล็อกตำแหน่ง (ลองปรับเป็น 5 เพื่อให้ใกล้ขึ้น)
+                                        myRoot.CFrame = root.CFrame * CFrame.new(0, 7, 0)
+                                        myRoot.Velocity = Vector3.new(0, 0, 0)
+                                        
+                                        -- [ส่วนการตีโดยใช้ Remote ที่คุณให้มาล่าสุด]
+                                        local attackArgs = {
+                                            {
+                                                [2] = "%"
+                                            }
+                                        }
+                                        remote:FireServer(unpack(attackArgs))
+                                          
+                                          -- ส่วนของการตี
+                                        local args = {{{state = Enum.HumanoidStateType.Running, hitcount = 2}, "\f"}}
+                                        game:GetService("ReplicatedStorage").BridgeNet2.dataRemoteEvent:FireServer(unpack(args))
+                                    end
+                                end
+                            end
+                        end
+                    end)
+                end
+            end)
+        end
+    end
+})
+
+local Button = TeleportTab:Button({
+    Title = "Auto Teleport to game",
+    Desc = "",
+    Locked = false,
+    Callback = function()
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(444.544189, 113.856354, -113.843987, -0.999999881, -5.04851769e-08, 0.000453843968, -5.04631359e-08, 1, 4.85806773e-08, -0.000453843968, 4.85577729e-08, -0.999999881)
+wait(1)
+local args = {
+	{
+		{
+			"Play",
+			1,
+			"Default",
+			1,
+			1,
+			false
+		},
+		"\030"
+	}
+}
+game:GetService("ReplicatedStorage"):WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent"):FireServer(unpack(args))
+    end
+})
