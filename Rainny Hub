@@ -11,7 +11,7 @@ local Window = WindUI:CreateWindow({
     KeySystem = { 
         Key = { "Key!!!", "Key13579" },
         Note = "Key System with Rainny Hub",
-        SaveKey = false,
+        SaveKey = true,
     }
 })
 
