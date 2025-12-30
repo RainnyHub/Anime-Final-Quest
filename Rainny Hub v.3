@@ -16,137 +16,443 @@ local Window = WindUI:CreateWindow({
 })
 
 Window:Tag({
-    Title = "Update : 28/12/25",
+    Title = "Update : 30/12/25",
     Icon = "pc-case",
     Color = Color3.fromHex("#30ff6a"),
-    Radius = 13, -- from 0 to 13
+    Radius = 13,
 })
-
-User = {
-        Enabled = true,
-        Anonymous = false,
-        Callback = function()
-            print("clicked")
-        end,
-    },
 
 Window:EditOpenButton({
     Title = "Rainny Hub",
     Icon = "candy-cane",
+    CornerRadius = UDim.new(0,16),
+    StrokeThickness = 2,
+    Color = ColorSequence.new(
+        Color3.fromHex("0055FF"),
+        Color3.fromHex("C0392B")
+    ),
+    OnlyMobile = false,
     Enabled = true,
     Draggable = true,
 })
 
--- ประกาศ Tab ทั้งหมด (แก้ชื่อตัวแปรที่เว้นวรรคแล้ว)
+-- Tabs
 local MainTab = Window:Tab({ Title = "Main", Icon = "house" })
 local TeleportTab = Window:Tab({ Title = "Teleport", Icon = "shell" })
+local NewTab = Window:Tab({ Title = "What's new?", Icon = "scroll-text" })
 
-Window:EditOpenButton({
+-- [[ โครงสร้าง Auto Farm แบบใหม่ ]]
+task.spawn(function()
+    local remote = game:GetService("ReplicatedStorage"):WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+    
+    while true do
+        task.wait(0.3)
+        -- เช็คว่า เปิด AutoFarm อยู่ "และ" ไม่ได้อยู่ในโหมด Safe
+        if _G.AutoFarm and not _G.IsSafing then
+            pcall(function()
+                for i, v in pairs(workspace.NPCs:GetChildren()) do
+                    -- ถ้าอยู่ดีๆ เลือดลดจนเข้าเซฟโหมด ให้หลุดลูปทันที
+                    if not _G.AutoFarm or _G.IsSafing then break end
+                    
+                    local hum = v:FindFirstChild("Humanoid")
+                    local root = v:FindFirstChild("HumanoidRootPart")
 
-    Title = "Rainny Hub",
-
-    Icon = "candy-cane",
-
-    CornerRadius = UDim.new(0,16),
-
-    StrokeThickness = 2,
-
-    Color = ColorSequence.new(
-
-        Color3.fromHex("0055FF"), -- สีน้ำเงินเข้ม
-
-        Color3.fromHex("C0392B")  -- สีแดงเข้ม (จาก Code เดิมที่คุณชอบ)
-
-    ),
-
-    OnlyMobile = false,
-
-    Enabled = true,
-
-    Draggable = true,
-
-})
-
-local Toggle = MainTab:Toggle({
-    Title = "Auto Farm",
-    Desc = "Anti-Ban",
-    Icon = "",
-    Type = "Toggle",
-    Value = false, -- default value
-    Callback = function(state)
-        _G.AutoFarm = state
-
-        if _G.AutoFarm then
-            task.spawn(function()
-                local remote = game:GetService("ReplicatedStorage"):WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
-                
-                while _G.AutoFarm do
-                    task.wait(0.5)
-                    pcall(function()
-                        for i, v in pairs(workspace.NPCs:GetChildren()) do
-                            if not _G.AutoFarm then break end
+                    if hum and hum.Health > 0 and root then
+                        while _G.AutoFarm and not _G.IsSafing and hum.Health > 0 and v.Parent ~= nil do
+                            task.wait()
+                            local char = game.Players.LocalPlayer.Character
+                            local myRoot = char and char:FindFirstChild("HumanoidRootPart")
                             
-                            local hum = v:FindFirstChild("Humanoid")
-                            local root = v:FindFirstChild("HumanoidRootPart")
-
-                            if hum and hum.Health > 0 and root then
-                                while _G.AutoFarm and hum.Health > 0 and v.Parent ~= nil do
-                                    task.wait() -- ป้องกันเกมค้าง
-                                    
-                                    local myRoot = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                                    if myRoot then
-                                        -- ล็อกตำแหน่ง (ลองปรับเป็น 5 เพื่อให้ใกล้ขึ้น)
-                                        -- ตำแหน่งที่เราต้องการให้ตัวละครไปอยู่ (ลอยเหนือมอนสเตอร์ 7 หน่วย)
-                                        local targetPos = root.Position + Vector3.new(0, 7, 0)
-
-                                        -- ใช้ CFrame.lookAt(ตำแหน่งตัวเรา, ตำแหน่งที่จะให้หันไปมอง)
-                                        myRoot.CFrame = CFrame.lookAt(targetPos, root.Position)
-
-                                        -- หยุดแรงเหวี่ยง
-                                        myRoot.Velocity = Vector3.new(0, 0, 0)
-                                        
-                                        -- [ส่วนการตีโดยใช้ Remote ที่คุณให้มาล่าสุด]
-                                        local attackArgs = {
-                                            {
-                                                [2] = "%"
-                                            }
-                                        }
-                                        remote:FireServer(unpack(attackArgs))
-                                          
-                                          -- ส่วนของการตี
-                                        local args = {{{state = Enum.HumanoidStateType.Running, hitcount = 2}, "\f"}}
-                                        game:GetService("ReplicatedStorage").BridgeNet2.dataRemoteEvent:FireServer(unpack(args))
-                                    end
-                                end
+                            if myRoot then
+                                local targetPos = root.Position + Vector3.new(0, 13, 0)
+                                myRoot.CFrame = CFrame.lookAt(targetPos, root.Position)
+                                myRoot.Velocity = Vector3.new(0, 0, 0)
+                                
+                                remote:FireServer(unpack({{{[2] = "%"}}}))
+                                remote:FireServer(unpack({{{state = Enum.HumanoidStateType.Running, hitcount = 2}, "\f"}}))
                             end
                         end
-                    end)
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- ปุ่ม Toggle ของคุณให้เหลือแค่นี้พอ
+local ToggleFarm = MainTab:Toggle({
+    Title = "Auto Farm",
+    Desc = "Fast Farm + Anti-Ban",
+    Icon = "swords",
+    Value = false,
+    Callback = function(state)
+        _G.AutoFarm = state
+    end
+})
+
+--- 📌 ระบบ Auto Skill (แก้ไขเป็นปุ่ม 1, 2, 3)
+local ToggleSkill = MainTab:Toggle({
+    Title = "Auto Skill",
+    Desc = "Auto Press 1, 2, 3 (Fast Loop)",
+    Icon = "zap",
+    Value = false,
+    Callback = function(state)
+        _G.AutoSkill = state
+        if _G.AutoSkill then
+            task.spawn(function()
+            wait(3)
+                local vim = game:GetService("VirtualInputManager")
+                -- เปลี่ยนปุ่มที่นี่
+                local skillKeys = {
+                    Enum.KeyCode.One, 
+                    Enum.KeyCode.Two, 
+                    Enum.KeyCode.Three
+                }
+                
+                while _G.AutoSkill do
+                    -- ทำงานเฉพาะตอนเปิด Auto Skill
+                    for _, key in ipairs(skillKeys) do
+                        if not _G.AutoSkill then break end
+                        
+                        pcall(function()
+                            vim:SendKeyEvent(true, key, false, game)
+                            task.wait(0.05)
+                            vim:SendKeyEvent(false, key, false, game)
+                        end)
+                        task.wait(0.15) -- ความเร็วในการสลับปุ่ม (ปรับให้เร็วขึ้น)
+                    end
+                    task.wait(0.3) -- วนรอบใหม่เพื่อเช็คสกิลที่ Cooldown เสร็จ
                 end
             end)
         end
     end
 })
 
-local Button = TeleportTab:Button({
-    Title = "Auto Teleport to game",
-    Desc = "",
-    Locked = false,
-    Callback = function()
-        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(444.544189, 113.856354, -113.843987, -0.999999881, -5.04851769e-08, 0.000453843968, -5.04631359e-08, 1, 4.85806773e-08, -0.000453843968, 4.85577729e-08, -0.999999881)
-wait(1)
-local args = {
-	{
-		{
-			"Play",
-			1,
-			"Default",
-			1,
-			1,
-			false
-		},
-		"\030"
-	}
-}
-game:GetService("ReplicatedStorage"):WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent"):FireServer(unpack(args))
+-- [[ ตั้งค่าตำแหน่งและตัวแปร ]]
+local GateCFrame = CFrame.new()
+local SelectedPlayers = 1 
+_G.SafeModeEnabled = true
+_G.IsSafing = false
+
+-- [[ ฟังก์ชันวาร์ปไปหน้าประตูและส่ง Remote ]]
+local function EnterGate(stageId, difficultyId)
+    pcall(function()
+        local root = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        
+        -- 1. วาร์ปไปพิกัดหน้าประตู (ตามวิดีโอ)
+        if root then
+            root.CFrame = GateCFrame
+            task.wait(0.4) -- หน่วงเวลาเล็กน้อยเพื่อให้ตำแหน่งอัปเดต
+        end
+
+        -- 2. ส่ง Remote เข้าด่าน
+        local remote = game:GetService("ReplicatedStorage"):WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+        local args = {
+            {
+                {
+                    "Play",
+                    SelectedPlayers, -- จำนวนคน
+                    "Default", 
+                    stageId,   -- ลำดับด่าน
+                    difficultyId, -- ความยาก
+                    false
+                },
+                "\030"
+            }
+        }
+        remote:FireServer(unpack(args))
+    end)
+end
+
+-- [[ ระบบ Safe Mode (รันเองตอนเปิดเกม) ]]
+-- [[ ระบบ Safe Mode (รันเองตอนเปิดเกม) - ปรับปรุงความเร็วและระยะ TP ]]
+task.spawn(function()
+    local safePos = nil
+    local tickCount = 0
+    local skyHeight = 500 -- ปรับความสูงที่ต้องการให้ขึ้นไปบนฟ้า (หน่วยเป็น Studs)
+    local jitterStrength = 15 -- ระยะที่ให้ขยับขึ้น-ลง (ยิ่งมากยิ่งส่ายแรง)
+
+    while true do
+        task.wait(0.05) -- ปรับให้เร็วขึ้นกว่า 0.1 เพื่อความไวในการขยับ
+        
+        if _G.SafeModeEnabled then
+            local player = game.Players.LocalPlayer
+            local char = player.Character
+            local hum = char and char:FindFirstChild("Humanoid")
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            
+            if hum and root then
+                local hpPercent = (hum.Health / hum.MaxHealth) * 100
+                
+                -- [[ เงื่อนไขเริ่มทำงาน: เลือด <= 50% ]]
+                if hpPercent <= 30 and not _G.IsSafing then
+                    _G.IsSafing = true
+                    _G.AutoFarm = false
+                    -- กำหนดจุดพักบนฟ้า (ขึ้นไปสูงๆ)
+                    safePos = root.CFrame * CFrame.new(0, skyHeight, 0)
+                
+                -- [[ เงื่อนไขหยุดทำงาน: เลือดเต็ม 100% ]]
+                elseif hpPercent >= 100 and _G.IsSafing then
+                    _G.IsSafing = false
+                    _G.AutoFarm = true
+                    safePos = nil
+                    if root:FindFirstChild("SafeAnchor") then root.SafeAnchor:Destroy() end
+                    -- กลับไปที่ GateCFrame (ต้องมั่นใจว่าตัวแปร GateCFrame ถูกประกาศไว้ที่อื่นแล้ว)
+                    if GateCFrame then root.CFrame = GateCFrame end
+                end
+
+                -- [[ ช่วงที่กำลังเซฟ: ทำการ TP ขึ้น-ลง ไวๆ ]]
+                if _G.IsSafing and safePos then
+                    tickCount = tickCount + 1
+                    
+                    -- ใช้สูตรสลับค่าบวก/ลบ เพื่อให้ตัวละครสั่น (Jitter) ขึ้นลงบนฟ้า
+                    local offset = (tickCount % 2 == 0 and jitterStrength or -jitterStrength)
+                    root.CFrame = safePos * CFrame.new(0, offset, 0)
+                    
+                    -- ล้างแรงโน้มถ่วง
+                    root.Velocity = Vector3.new(0, 0, 0)
+                    
+                    -- ป้องกันตัวละครร่วง (Anchor เทียม)
+                    if not root:FindFirstChild("SafeAnchor") then
+                        local bv = Instance.new("BodyVelocity")
+                        bv.Name = "SafeAnchor"
+                        bv.Velocity = Vector3.new(0, 0, 0)
+                        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                        bv.Parent = root
+                    end
+                end
+            end
+        end
     end
+end)
+
+-- [[ 1. ตั้งค่าพิกัดและตัวแปรเริ่มต้น ]]
+local GateCFrame = CFrame.new(411.858917, 113.840637, -158.762726, 0.999997973, -0.00103281392, -0.00173109199, 0.000968689506, 0.999327958, -0.0366429202, 0.001767774, 0.0366411693, 0.999326944)
+local SelectedMap = 1
+local SelectedDiff = 1
+local SelectedCount = 1
+
+local TpSection = TeleportTab:Section({
+    Title = "Mission Settings",
+    Opened = true
+})
+
+-- [[ 2. Dropdown แบบ Advanced ปกติ ]]
+
+-- เลือกด่าน (Select Map)
+TpSection:Dropdown({
+    Title = "Select Map",
+    Values = {
+        {
+            Title = "Summon Gate",
+            Icon = "map",
+            Callback = function() 
+                SelectedMap = 1 
+            end
+        },
+        {
+            Title = "Summon Station - 1",
+            Icon = "map-pin",
+            Callback = function() 
+                SelectedMap = 2 
+            end
+        },
+        {
+            Title = "Statue's Cave",
+            Icon = "mountain",
+            Callback = function() 
+                SelectedMap = 3 
+            end
+        }
+    }
+})
+
+-- เลือกความยาก (Select Difficulty)
+TpSection:Dropdown({
+    Title = "Select Difficulty",
+    Values = {
+        {
+            Title = "Normal",
+            Icon = "swords",
+            Callback = function() 
+                SelectedDiff = 1 
+            end
+        },
+        {
+            Title = "Hard",
+            Icon = "flame",
+            Callback = function() 
+                SelectedDiff = 2 
+            end
+        }
+    }
+})
+
+-- เลือกจำนวนคน (Select Player Count)
+TpSection:Dropdown({
+    Title = "Select Player Count",
+    Values = {
+        { Title = "1 Player", Icon = "user", Callback = function() SelectedCount = 1 end },
+        { Title = "2 Players", Icon = "users", Callback = function() SelectedCount = 2 end },
+        { Title = "3 Players", Icon = "users-round", Callback = function() SelectedCount = 3 end },
+        { Title = "4 Players", Icon = "users-round", Callback = function() SelectedCount = 4 end }
+    }
+})
+
+-- [[ 3. ปุ่มกดเข้าด่าน (วาร์ปไปหน้าประตูก่อนแล้วค่อยเข้า) ]]
+TpSection:Button({
+    Title = "Enter Mission",
+    Desc = "Warp to Gate and Start",
+    Callback = function()
+        pcall(function()
+            local root = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            
+            -- วาร์ปไปพิกัดหน้าประตูที่คุณระบุ
+            if root then
+                root.CFrame = GateCFrame
+                task.wait(0.4)
+            end
+
+            -- ส่ง Remote เข้าด่านตามค่าที่เลือกไว้จาก Dropdown ด้านบน
+            local remote = game:GetService("ReplicatedStorage"):WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+            local args = {
+                {
+                    {
+                        "Play",
+                        SelectedCount, 
+                        "Default", 
+                        SelectedMap,   
+                        SelectedDiff, 
+                        false
+                    },
+                    "\030"
+                }
+            }
+            remote:FireServer(unpack(args))
+        end)
+    end
+})
+
+-- สร้าง Section สำหรับ Safe Mode ไว้ในหน้า Main
+local SafeSection = MainTab:Section({
+    Title = "Safe Mode",
+    Opened = true,
+})
+
+-- ใส่ Toggle เข้าไปใน Section
+-- [[ ตั้งค่าเริ่มต้นสำหรับ Auto Run ]]
+_G.SafeModeEnabled = true -- เปิดให้ทำงานทันที
+_G.IsSafing = false
+_G.AutoFarm = true -- สมมติว่าค่าเริ่มต้นของฟาร์มคือเปิดไว้
+
+-- [[ ฟังก์ชันสำหรับการทำงานของ Safe Mode ]]
+-- [[ ตัวแปรเริ่มต้น ]]
+_G.SafeModeEnabled = false
+_G.IsSafing = false
+_G.AutoFarm = true -- สมมติว่ามีระบบฟาร์ม
+
+-- [[ ฟังก์ชัน Safe Mode ]]
+function RunSafeMode()
+    task.spawn(function()
+        local safePos = nil
+        local skyHeight = 1500 -- สูงขึ้นไปบนฟ้า (ปรับได้)
+        local moveRange = 300  -- รัศมีการบินวาร์ป (ยิ่งเยอะยิ่งบินไปไกลทั่วแผนที่)
+        
+        while true do
+            task.wait(0.01) -- ปรับให้ไวสุดๆ เพื่อการขยับแบบบ้าคลั่ง
+            
+            if _G.SafeModeEnabled then
+                local char = game.Players.LocalPlayer.Character
+                local hum = char and char:FindFirstChild("Humanoid")
+                local root = char and char:FindFirstChild("HumanoidRootPart")
+                
+                if hum and root then
+                    local hpPercent = (hum.Health / hum.MaxHealth) * 100
+                    
+                    -- [[ เงื่อนไข: เลือดน้อยกว่า 50% ให้เริ่มหนี ]]
+                    if hpPercent <= 50 and not _G.IsSafing then
+                        _G.IsSafing = true
+                        _G.AutoFarm = false
+                        -- เก็บตำแหน่งปัจจุบันแล้วบวกความสูงขึ้นไป
+                        safePos = root.CFrame * CFrame.new(0, skyHeight, 0)
+                    
+                    -- [[ เงื่อนไข: เลือดเต็มให้กลับมา ]]
+                    elseif hpPercent >= 100 and _G.IsSafing then
+                        _G.IsSafing = false
+                        _G.AutoFarm = true
+                        safePos = nil
+                        if root:FindFirstChild("SafeAnchor") then root.SafeAnchor:Destroy() end
+                        -- วาร์ปกลับจุดเดิมหรือประตู (ถ้ามี GateCFrame)
+                        if GateCFrame then root.CFrame = GateCFrame end
+                    end
+
+                    -- [[ ช่วงที่กำลังบินวายป่วงอยู่บนฟ้า ]]
+                    if _G.IsSafing and safePos then
+                        -- สุ่มตำแหน่ง X, Y, Z แบบกว้างๆ
+                        local rx = math.random(-moveRange, moveRange)
+                        local ry = math.random(-100, 100) -- บินขึ้นลงแรงๆ
+                        local rz = math.random(-moveRange, moveRange)
+                        
+                        -- วาร์ปไปตำแหน่งสุ่มรอบๆ จุดปลอดภัยบนฟ้า
+                        root.CFrame = safePos * CFrame.new(rx, ry, rz)
+                        
+                        -- ล็อกตัวไม่ให้ร่วง
+                        root.Velocity = Vector3.new(0, 0, 0)
+                        if not root:FindFirstChild("SafeAnchor") then
+                            local bv = Instance.new("BodyVelocity")
+                            bv.Name = "SafeAnchor"
+                            bv.Velocity = Vector3.new(0, 0, 0)
+                            bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                            bv.Parent = root
+                        end
+                    end
+                end
+            end
+        end
+    end)
+end
+
+-- เรียกใช้งานฟังก์ชัน
+RunSafeMode()
+
+-- [[ ส่วนของ UI Toggle ]]
+SafeSection:Toggle({
+    Title = "Safe mode",
+    Desc = "บินวาร์ปไปทั่วท้องฟ้าเมื่อเลือดต่ำกว่า 50%",
+    Icon = "shield-check",
+    Value = _G.SafeModeEnabled,
+    Callback = function(state) 
+        _G.SafeModeEnabled = state
+        
+        if not state then
+            _G.IsSafing = false
+            -- ถ้าปิดโหมด ให้ลบตัวล็อคทิ้งทันที
+            local char = game.Players.LocalPlayer.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if root and root:FindFirstChild("SafeAnchor") then
+                root.SafeAnchor:Destroy()
+            end
+        end
+    end
+})
+
+-- เพิ่มเนื้อหาใน What's new?
+local UpdateSection = NewTab:Section({
+    Title = "Version 1.2.0 - Update Log",
+    Opened = true
+})
+
+UpdateSection:Paragraph({
+    Title = "🎉 Safe mode",
+    Content = "* Added Advanced Dropdown for Stage Selection.\n* Integrated Safe Mode with Auto-Fly (100 studs).\n* Optimized Auto-Farm & Skill speed."
+})
+
+UpdateSection:Paragraph({
+    Title = "🛠️ Improvements & Fixes",
+    Content = "* Removed mandatory teleport to Gate for faster entry.\n* Fixed Safe Mode not anchoring player in the air.\n* Fixed 'Default' stage ID issues for Lv.7 and Lv.15."
+})
+
+UpdateSection:Paragraph({
+    Title = "⚠️ New Tp to game",
+    Content = "If the teleport doesn't trigger, please make sure you are in the Lobby area."
 })
